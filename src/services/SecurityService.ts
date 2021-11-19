@@ -33,19 +33,23 @@ export default class Security {
     }
 
     public static verifyHash(password: string, key: string): boolean {
-        const originalHash : string = key.split('$')[1];
-        const salt : string = key.split['$'][0];
-        const hash: string pbkdf2Sync(password, salt, this._iterations, this._keyLen, this._digest)
+        const originalHash: string = key.split('$')[1];
+        const salt: string = key.split('$')[1];
+        const hash: string = pbkdf2Sync(password, salt, this._iterations, this._keyLen, this._digest)
             .toString('hex');
-        return hash = originalHash;
+        return hash === originalHash;
     }
 
-    public generateTokeb(user: User): string {
+    public generateToken(user: User): string {
         return jwt.sign({
             id: user.id,
             username: user.username,
             email: user.email,
         }, this._secret, {expiresIn: this._tokenExp})
+    }
+
+    public verifyToken(token:string): Claims{
+        return jwt.verify(token, this._secret) as Claims;
     }
 
 }

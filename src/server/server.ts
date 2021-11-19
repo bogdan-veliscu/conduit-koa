@@ -1,4 +1,4 @@
-import * as Koa from "koa";
+import Koa from "koa";
 import cors from '@koa/cors';
 import bodyParser from "koa-bodyparser";
 import { SwaggerRouter } from "koa-swagger-decorator";
@@ -6,7 +6,7 @@ import { SwaggerRouter } from "koa-swagger-decorator";
 import helmet from 'koa-helmet';
 import { Server } from "net";
 import {configureSwaggerPlugin} from './plugins/swagger'
-import Controllers from './controllers/index'
+import Controllers from '../controllers/index'
 import { createConnection } from "typeorm";
 
 export async function start(port: number): Promise<Server>{
@@ -56,4 +56,5 @@ export async function start(port: number): Promise<Server>{
     const server = app.listen(port);
     console.log(`# Conduit API running on port: ${port}`)
 
+    return server;
 }

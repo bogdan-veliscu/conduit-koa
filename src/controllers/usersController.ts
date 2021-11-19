@@ -8,6 +8,7 @@ import { assert, object, string } from '@hapi/joi';
 import {User} from '../entities/User'
 import UserRepository from "../repositories/UserRepository"
 import SecurityService from '../services/SecurityService';
+import AuthenticationMiddleware from '../middleware/AuthenticationMiddleware';
 
 
 @route('/api')
@@ -34,7 +35,8 @@ export default class UserController{
         }),);
 
         const user: User = new User();
-        Object.assign(user, ctx.request.body.user);
+
+        Object.assign(user, ctx?.request?.body?.get(user));
         SecurityService.hashPassword(user);
 
         await this._userRepository.save(user);
