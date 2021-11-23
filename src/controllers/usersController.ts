@@ -4,6 +4,19 @@ import {Context} from 'koa';
 import {Connection} from 'typeorm';
 
 import { assert, object, string } from '@hapi/joi';
+import Doc, {
+  description,
+  query,
+  responses,
+  tags,
+  body,
+  middlewares,
+  securityAll,
+  security,
+} from 'koa-swagger-decorator';
+
+const { request, summary } = Doc;
+const tag = tags(['Users']);
 
 import {User} from '../entities/User'
 import UserRepository from "../repositories/UserRepository"
@@ -21,8 +34,17 @@ export default class UserController{
         this._securityService = securityService;
     }
 
-    @route('/users')
-    @POST()
+    @tag
+    @request('POST','/users')
+    @body((SignupRequest as any).swaggerDocument)
+    @responses({
+        200: {
+            schema: {
+                type: 'object',
+                properties: (UserDetails as any).swaggerDocument,
+            }
+        }
+    })
     async register(ctx: Context){
         assert(ctx.request.body, object({
             user: object({

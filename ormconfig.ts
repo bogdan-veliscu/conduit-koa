@@ -14,7 +14,7 @@ module.exports= {
             rejectUnauthorized: false,
         },
     }: undefined,
-    entities: ['src/repo/models/**/*.{js,ts}'],
+    entities: ['src/entities/**/*.{js,ts}'],
     migrations: ['src/migrations/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],
 }
