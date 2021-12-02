@@ -1,60 +1,45 @@
 import Koa from "koa";
+import {createContainer, AwilixContainer, asValue} from 'awilix';
+import { scopePerRequest, loadControllers } from 'awilix-koa';
 import cors from '@koa/cors';
 import bodyParser from "koa-bodyparser";
-import { SwaggerRouter } from "koa-swagger-decorator";
 
 import helmet from 'koa-helmet';
-import { Server } from "net";
-import {configureSwaggerPlugin} from './plugins/swagger'
-import Controllers from '../controllers/index'
-import { createConnection } from "typeorm";
+import errorMiddleware from '../middleware/ErrorMiddleware';
+import Logger from './Logger'
+import SecurityService from '../services/SecurityService'
+import { createConnection, Connection } from "typeorm";
 
-export async function start(port: number): Promise<Server>{
+export async function connectWithRetry(): Promise<Connection> {
+    try {
+        return await createConnection();
+    } catch (err){
+        Logger.error('failed to connect to db on startup -- retrying in 5 seconds', err);
+        await new Promise((resolve:any) => setTimeout(resolve, 500));
+        return connectWithRetry();
+    }
+}
+export async function createApp(): Promise<Koa>{
     const app = new Koa();
 
-    // provide important secyrity headers
-    app.use(
-        helmet({
-            contentSecurityPolicy: false,
-        })
-    )
+    const securityService: SecurityService = new SecurityService();
+    const connection: Connection = await connectWithRetry();
+
+    Logger.info('successfully established DB connection');
+
+    const container: AwilixContainer = createContainer().register({
+        securityService: asValue(securityService),
+        connection: asValue(connection),
+    })
+
+    app
+        .use(cors())
+        .use(bodyParser())
+        .use(helmet())
+        .use(scopePerRequest(container))
+        .use(errorMiddleware)
+    .use(loadControllers('../controllers/*.{ts,js}', { cwd:__dirname }));
 
 
-    //enable cors
-    app.use(cors());
-
-    app.use(bodyParser());
-
-    const router = new SwaggerRouter();
-
-    //add swagger
-    configureSwaggerPlugin(router);
-
-    //inject controllers
-    Controllers(router)
-
-    //base route
-    router.get('/', ctx=>{
-        ctx.body={
-            date: new Date().toString(),
-            port,
-            NODE_ENV: process.env.NODE_ENV,
-            version: '1',
-            message: 'Conduit API running. Go /swagger to learn more...',
-        };
-    });
-
-    try {
-        await createConnection();
-    } catch (err) {
-        console.warn(err);
-    }
-
-    app.use(router.routes());
-    app.use(router.allowedMethods());
-
-    const server = app.listen(port);
-    console.log(`# Conduit API running on port: ${port}`)
-
-    return server;
+    return app;
 }

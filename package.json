@@ -10,6 +10,7 @@
         "start:dev": "nodemon --watch \"src/**/*.ts\" --exec \"ts-node\" src/index.ts",
         "db": "docker-compose up -d",
         "docker-down": "docker-compose down",
+        "typeorm": "./node_modules/.bin/typeorm",
         "wait": "node scripts/wait 3000",
         "start": "npm-run-all db wait start:dev",
         "prettier-format": "run-script-os",
@@ -49,7 +50,7 @@
         "pg": "^8.7.1",
         "reflect-metadata": "^0.1.13",
         "slugify": "^1.4.0",
-        "typeorm": "^0.2.40",
+        "typeorm": "^0.2.41",
         "winston": "^3.2.1"
     },
     "keywords": [
@@ -73,7 +74,7 @@
         "@types/koa-logger": "^3.1.0",
         "@types/koa-router": "7.4.0",
         "@types/koa__cors": "^3.0.1",
-        "@types/node": "^13.11.0",
+        "@types/node": "^13.13.52",
         "@types/pg": "^7.14.3",
         "@types/ramda": "^0.26.6",
         "@types/sinon": "^9.0.0",

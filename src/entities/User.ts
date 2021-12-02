@@ -1,44 +1,34 @@
-import { Entity, Index, Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Index, Column } from 'typeorm';
 
 @Entity('users')
 export class User {
-    @PrimaryGeneratedColumn()
-    id!: number;
+	@PrimaryGeneratedColumn()
+	id!: number;
 
-    @Index({unique:true})
-    @Column()
-    username: string;
+	@Index({ unique: true })
+	@Column()
+	username!: string;
 
-    @Index({unique: true})
-    @Column()
-    email!: string;
-    
-    @Column({default: ''})
-    bio!: string;
+	@Index({ unique: true })
+	@Column()
+	email!: string;
 
-    @Column({default:''})
-    image: string;
+	@Column({ default: '' })
+	bio!: string;
 
-    @Column()
-    password!: string;
+	@Column({ default: '' })
+	image!: string;
 
-    toUserJSON(token: string){
-        return {
-            email:this.email,
-            username: this.username,
-            bio: this.bio,
-            image: this.image,
-            token
+	@Column()
+	password!: string;
 
-        };
-    }
-
-    toProfileJSON(){
-        return {
-            username: this.username,
-            bio: this.bio,
-            image: this.image
-        };
-    }
-
+	toUserJSON(token: string) {
+		return {
+			email: this.email,
+			username: this.username,
+			bio: this.bio,
+			image: this.image,
+			token,
+		};
+	}
 }

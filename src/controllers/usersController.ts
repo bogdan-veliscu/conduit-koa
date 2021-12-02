@@ -4,25 +4,12 @@ import {Context} from 'koa';
 import {Connection} from 'typeorm';
 
 import { assert, object, string } from '@hapi/joi';
-import Doc, {
-  description,
-  query,
-  responses,
-  tags,
-  body,
-  middlewares,
-  securityAll,
-  security,
-} from 'koa-swagger-decorator';
 
-const { request, summary } = Doc;
-const tag = tags(['Users']);
-
+import Logger from '../server/Logger'
 import {User} from '../entities/User'
 import UserRepository from "../repositories/UserRepository"
 import SecurityService from '../services/SecurityService';
 import AuthenticationMiddleware from '../middleware/AuthenticationMiddleware';
-
 
 @route('/api')
 export default class UserController{
@@ -34,18 +21,10 @@ export default class UserController{
         this._securityService = securityService;
     }
 
-    @tag
-    @request('POST','/users')
-    @body((SignupRequest as any).swaggerDocument)
-    @responses({
-        200: {
-            schema: {
-                type: 'object',
-                properties: (UserDetails as any).swaggerDocument,
-            }
-        }
-    })
+    @route('/users')
+    @POST()
     async register(ctx: Context){
+        Logger.info("# users POST:", ctx.request.body)
         assert(ctx.request.body, object({
             user: object({
                 username: string().min(5).max(30).required(),
@@ -58,7 +37,7 @@ export default class UserController{
 
         const user: User = new User();
 
-        Object.assign(user, ctx?.request?.body?.get(user));
+        Object.assign(user, ctx?.request?.body?.user);
         SecurityService.hashPassword(user);
 
         await this._userRepository.save(user);
