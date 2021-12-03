@@ -1,109 +1,170 @@
 {
-    "name": "conduit-koa",
-    "version": "1.0.0",
-    "description": "A Koa and TypeORM implementation for the Conduit Real World Backend",
-    "scripts": {
-        "build": "rimraf ./build && tsc",
-        "build:watch": "npm run build -- --watch",
-        "lint": "eslint . --ext .ts",
-        "lint-fix": "eslint . --ext .ts --fix",
-        "start:dev": "nodemon --watch \"src/**/*.ts\" --exec \"ts-node\" src/index.ts",
-        "db": "docker-compose up -d",
-        "docker-down": "docker-compose down",
-        "typeorm": "./node_modules/.bin/typeorm",
-        "wait": "node scripts/wait 3000",
-        "start": "npm-run-all db wait start:dev",
-        "prettier-format": "run-script-os",
-        "prettier-format:win32": "prettier --config .prettierrc \"./src/**/*.ts\" --write",
-        "prettier-format:darwin:linux": "prettier --config .prettierrc 'src/**/*.ts' --write",
-        "prettier-format:default": "prettier --config .prettierrc 'src/**/*.ts' --write",
-        "prettier-watch": "run-script-os",
-        "prettier-watch:win32": "onchange \"src/**/*.ts\" -- prettier --write {{changed}}",
-        "prettier-watch:darwin:linux": "onchange 'src/**/*.ts' -- prettier --write {{changed}}",
-        "prettier-watch:default": "onchange 'src/**/*.ts' -- prettier --write {{changed}}",
-        "test": "jest",
-        "test:dev": "jest --watchAll"
-    },
-    "husky": {
-        "hooks": {
-            "pre-commit": "npm run test && npm run prettier-format && npm run lint"
-        }
-    },
-    "dependencies": {
-        "@hapi/joi": "^17.1.1",
-        "@koa/cors": "^3.1.0",
-        "awilix": "^4.2.5",
-        "awilix-koa": "^4.0.0",
-        "concurrently": "^6.4.0",
-        "crosenv": "^1.0.0",
-        "cross-env": "^7.0.3",
-        "dotenv": "^10.0.0",
-        "http-status-codes": "^1.4.0",
-        "jsonwebtoken": "^8.5.1",
-        "kcors": "^2.2.2",
-        "koa": "^2.13.4",
-        "koa-bodyparser": "^4.3.0",
-        "koa-helmet": "^6.1.0",
-        "koa-router": "^10.1.1",
-        "koa-swagger-decorator": "^1.8.0",
-        "net": "^1.0.2",
-        "pg": "^8.7.1",
-        "reflect-metadata": "^0.1.13",
-        "slugify": "^1.4.0",
-        "typeorm": "^0.2.41",
-        "winston": "^3.2.1"
-    },
-    "keywords": [
-        "node",
-        "koa",
-        "typeormm",
-        "typscript",
-        "docker",
-        "postgres"
-    ],
-    "author": "",
-    "license": "MIT",
-    "devDependencies": {
-        "@babel/node": "^7.14.5",
-        "@types/hapi__joi": "^16.0.12",
-        "@types/jest": "^25.2.1",
-        "@types/jsonwebtoken": "^8.3.9",
-        "@types/kcors": "^2.2.3",
-        "@types/koa": "^2.11.3",
-        "@types/koa-bodyparser": "^4.3.0",
-        "@types/koa-logger": "^3.1.0",
-        "@types/koa-router": "7.4.0",
-        "@types/koa__cors": "^3.0.1",
-        "@types/node": "^13.13.52",
-        "@types/pg": "^7.14.3",
-        "@types/ramda": "^0.26.6",
-        "@types/sinon": "^9.0.0",
-        "@types/supertest": "^2.0.9",
-        "@types/uuid": "^3.4.5",
-        "@types/yargs-parser": "^15.0.0",
-        "@typescript-eslint/eslint-plugin": "^2.26.0",
-        "@typescript-eslint/parser": "^2.26.0",
-        "coveralls": "^3.0.11",
-        "eslint": "^6.8.0",
-        "eslint-config-airbnb-base": "^14.0.0",
-        "eslint-config-prettier": "^6.10.0",
-        "eslint-plugin-import": "^2.18.2",
-        "eslint-plugin-prettier": "^3.1.2",
-        "husky": "^4.3.8",
-        "jest": "25.2.1",
-        "jest-junit": "^10.0.0",
-        "nodemon": "^2.0.2",
-        "npm-run-all": "^4.1.5",
-        "onchange": "^6.1.0",
-        "opn-cli": "^1.0.0",
-        "prettier": "^1.19.1",
-        "random-int": "^2.0.1",
-        "rimraf": "^3.0.2",
-        "run-script-os": "^1.1.1",
-        "sinon": "^9.0.1",
-        "supertest": "^4.0.2",
-        "ts-jest": "^25.3.1",
-        "ts-node": "^8.8.1",
-        "typescript": "^3.8.3"
+  "name": "conduit-koa",
+  "version": "1.0.0",
+  "description": "A Koa and TypeORM implementation for the Conduit Real World Backend",
+  "scripts": {
+    "build": "rimraf ./build && tsc",
+    "build:watch": "npm run build -- --watch",
+    "lint": "eslint . --ext .ts",
+    "lint-fix": "eslint . --ext .ts --fix",
+    "start:dev": "nodemon --watch \"src/**/*.ts\" --exec \"ts-node\" src/index.ts",
+    "db": "docker-compose up -d",
+    "docker-down": "docker-compose down",
+    "typeorm": "./node_modules/.bin/typeorm",
+    "wait": "node scripts/wait 3000",
+    "start": "npm-run-all db wait start:dev",
+    "prettier-format": "run-script-os",
+    "prettier-format:win32": "prettier --config .prettierrc \"./src/**/*.ts\" --write",
+    "prettier-format:darwin:linux": "prettier --config .prettierrc 'src/**/*.ts' --write",
+    "prettier-format:default": "prettier --config .prettierrc 'src/**/*.ts' --write",
+    "prettier-watch": "run-script-os",
+    "prettier-watch:win32": "onchange \"src/**/*.ts\" -- prettier --write {{changed}}",
+    "prettier-watch:darwin:linux": "onchange 'src/**/*.ts' -- prettier --write {{changed}}",
+    "prettier-watch:default": "onchange 'src/**/*.ts' -- prettier --write {{changed}}",
+    "unittest": "jest  --collectCoverage --detectOpenHandles --testPathPattern=tests/unit/.*.spec.ts --no-cache",
+    "test": "npm-run-all db wait unittest",
+    "test:dev": "jest --watchAll"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run test && npm run prettier-format && npm run lint"
     }
+  },
+  "prettier": {
+    "printWidth": 120,
+    "tabWidth": 2,
+    "useTabs": true,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "all"
+  },
+  "eslintConfig": {
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "rules": {
+      "@typescript-eslint/explicit-function-return-type": 0,
+      "@typescript-eslint/no-explicit-any": 0,
+      "@typescript-eslint/typedef": [
+        "error",
+        {
+          "arrayDestructuring": true,
+          "objectDestructuring": true,
+          "variableDeclaration": true
+        }
+      ],
+      "@typescript-eslint/no-inferrable-types": 0
+    }
+  },
+  "eslintIgnore": [
+    "node_modules",
+    "build",
+    "coverage",
+    "scripts"
+  ],
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "ts"
+    ],
+    "collectCoverageFrom": [
+      "./src/**/*.ts",
+      "!./src/entities/*.ts"
+    ],
+    "transform": {
+      "\\.ts$": "ts-jest"
+    },
+    "coverageThreshold": {
+      "global": {
+        "branches": 100,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      }
+    }
+  },
+  "dependencies": {
+    "@hapi/joi": "^17.1.1",
+    "@koa/cors": "^3.1.0",
+    "awilix": "^4.2.5",
+    "awilix-koa": "^4.0.0",
+    "concurrently": "^6.4.0",
+    "crosenv": "^1.0.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^10.0.0",
+    "http-status-codes": "^1.4.0",
+    "jsonwebtoken": "^8.5.1",
+    "kcors": "^2.2.2",
+    "koa": "^2.13.4",
+    "koa-bodyparser": "^4.3.0",
+    "koa-helmet": "^6.1.0",
+    "koa-router": "^10.1.1",
+    "koa-swagger-decorator": "^1.8.0",
+    "net": "^1.0.2",
+    "pg": "^8.7.1",
+    "reflect-metadata": "^0.1.13",
+    "slugify": "^1.4.0",
+    "typeorm": "^0.2.41",
+    "winston": "^3.2.1"
+  },
+  "keywords": [
+    "node",
+    "koa",
+    "typeormm",
+    "typscript",
+    "docker",
+    "postgres"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/node": "^7.14.5",
+    "@types/hapi__joi": "^16.0.12",
+    "@types/jest": "^25.2.1",
+    "@types/jsonwebtoken": "^8.3.9",
+    "@types/kcors": "^2.2.3",
+    "@types/koa": "^2.11.3",
+    "@types/koa-bodyparser": "^4.3.0",
+    "@types/koa-logger": "^3.1.0",
+    "@types/koa-router": "7.4.0",
+    "@types/koa__cors": "^3.0.1",
+    "@types/node": "^13.13.52",
+    "@types/pg": "^7.14.3",
+    "@types/ramda": "^0.26.6",
+    "@types/sinon": "^9.0.0",
+    "@types/supertest": "^2.0.9",
+    "@types/uuid": "^3.4.5",
+    "@types/yargs-parser": "^15.0.0",
+    "@typescript-eslint/eslint-plugin": "^2.26.0",
+    "@typescript-eslint/parser": "^2.26.0",
+    "coveralls": "^3.0.11",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-prettier": "^3.1.2",
+    "husky": "^4.3.8",
+    "jest": "25.2.1",
+    "jest-junit": "^10.0.0",
+    "nodemon": "^2.0.2",
+    "npm-run-all": "^4.1.5",
+    "onchange": "^6.1.0",
+    "opn-cli": "^1.0.0",
+    "prettier": "^1.19.1",
+    "random-int": "^2.0.1",
+    "rimraf": "^3.0.2",
+    "run-script-os": "^1.1.1",
+    "sinon": "^9.0.1",
+    "supertest": "^4.0.2",
+    "ts-jest": "^25.3.1",
+    "ts-node": "^8.8.1",
+    "typescript": "^3.8.3"
+  }
 }

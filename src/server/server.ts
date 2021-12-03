@@ -12,14 +12,17 @@ import { createConnection, Connection } from "typeorm";
 
 export async function connectWithRetry(): Promise<Connection> {
     try {
+        console.log("# calling createConnection")
         return await createConnection();
+        console.log("# after createConnection")
     } catch (err){
         Logger.error('failed to connect to db on startup -- retrying in 5 seconds', err);
-        await new Promise((resolve:any) => setTimeout(resolve, 500));
+        await new Promise((resolve:any) => setTimeout(resolve, 9000));
         return connectWithRetry();
     }
 }
 export async function createApp(): Promise<Koa>{
+    console.log("# createApp")
     const app = new Koa();
 
     const securityService: SecurityService = new SecurityService();

@@ -1,4 +1,4 @@
-import { route, GET, POST, before, inject, PUT } from 'awilix-koa';
+import { route, GET, POST, before, inject } from 'awilix-koa';
 import {OK, CREATED, UNAUTHORIZED} from 'http-status-codes';
 import {Context} from 'koa';
 import {Connection} from 'typeorm';
