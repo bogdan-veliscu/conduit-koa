@@ -31,4 +31,13 @@ export class User {
 			token,
 		};
 	}
+
+    toProfileJSON(following: boolean){
+        return {
+            username: this.username,
+            bio: this.bio,
+            image: this.image,
+            following
+        }
+    }
 }

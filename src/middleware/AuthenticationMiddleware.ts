@@ -1,64 +1,60 @@
-import { Context, Next } from "koa";
-import { Connection } from "typeorm";
-import { UNAUTHORIZED } from "http-status-codes";
+import { Context, Next } from 'koa';
+import { Connection } from 'typeorm';
+import { UNAUTHORIZED } from 'http-status-codes';
 
-
-import SecurityService, {Claims} from '../services/SecurityService';
-import UserRepository from '../repositories/UserRepository'
-import {User} from '../entities/User'
-
+import SecurityService, { Claims } from '../services/SecurityService';
+import UserRepository from '../repositories/UserRepository';
+import { User } from '../entities/User';
 
 export default function AuthenticationMiddleware(
-    {
-        connection,
-        securityService,
-    }: {
-        connection: Connection;
-        securityService: SecurityService;
-    }, authRequired: boolean = true,
+	{
+		connection,
+		securityService,
+	}: {
+		connection: Connection;
+		securityService: SecurityService;
+	},
+	authRequired: boolean = true,
 ) {
-    return async function (ctx: Context, next: Next){
-        const {authorization}: {authorization?:string} = ctx.header;
+	return async function(ctx: Context, next: Next) {
+		const { authorization }: { authorization?: string } = ctx.header;
 
-        if (!authorization){
-            if (!authRequired) {
-                return next();
-            } else {
-                ctx.throw(UNAUTHORIZED, "Unauthorized")
-            }
-        }
+		if (!authorization) {
+			if (!authRequired) {
+				return next();
+			} else {
+				ctx.throw(UNAUTHORIZED, 'Unauthorized');
+			}
+		}
 
-        const [tokenType, token]: string[] = authorization.split(' ')
-        
-        if (tokenType.toLowerCase() !== 'bearer' && tokenType.toLowerCase() !== "token"){
-            ctx.throw(UNAUTHORIZED, 'Unauthorized');
-        }
+		const [tokenType, token]: string[] = authorization.split(' ');
 
+		if (tokenType.toLowerCase() !== 'bearer' && tokenType.toLowerCase() !== 'token') {
+            ctx.throw(UNAUTHORIZED, 'Unauthorized: invalid token');
+		}
 
-        let claims: Claims;
+		let claims: Claims;
 
-        try {
-            claims = securityService.verifyToken(token);
-        } catch {
-            ctx.throw(UNAUTHORIZED, 'Unauthorized')
-        }
+		try {
+			claims = securityService.verifyToken(token);
+		} catch {
+            ctx.throw(UNAUTHORIZED, 'Unauthorized: invalid claims');
+		}
 
-        const userRepository: UserRepository = connection.getCustomRepository(UserRepository);
-        const user: User | undefined = await userRepository.findOne(claims.id)
+		const userRepository: UserRepository = connection.getCustomRepository(UserRepository);
+		const user: User | undefined = await userRepository.findOne(claims.id);
 
-        if(!user){
-            ctx.throw(UNAUTHORIZED, 'Unauthorized');
-        }
+		if (!user) {
+            ctx.throw(UNAUTHORIZED, 'Unauthorized: user not found');
+		}
 
-        ctx.state.user = user;
-        ctx.state.token = token;
+		ctx.state.user = user;
+		ctx.state.token = token;
 
-        return next();
-
-        
-    }
+		return next();
+	};
 }
 
-export function OptionalAuthenticationMiddleware(params: any){
-    return AuthenticationMiddleware(params, false)
+export function OptionalAuthenticationMiddleware(params: any) {
+	return AuthenticationMiddleware(params, false);
 }
