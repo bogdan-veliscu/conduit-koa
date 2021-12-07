@@ -110,7 +110,7 @@
     "net": "^1.0.2",
     "pg": "^8.7.1",
     "reflect-metadata": "^0.1.13",
-    "slugify": "^1.4.0",
+    "slugify": "^1.6.3",
     "typeorm": "^0.2.41",
     "winston": "^3.2.1"
   },

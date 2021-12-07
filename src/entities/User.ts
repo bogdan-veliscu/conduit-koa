@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Index, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Index, Column, OneToMany } from 'typeorm';
+import { Article } from './Article';
 
 @Entity('users')
 export class User {
@@ -22,6 +23,12 @@ export class User {
 	@Column()
 	password!: string;
 
+	@OneToMany(
+		() => Article,
+		(article: Article) => article.author,
+	)
+	articles!: Article[];
+
 	toUserJSON(token: string) {
 		return {
 			email: this.email,
@@ -32,12 +39,12 @@ export class User {
 		};
 	}
 
-    toProfileJSON(following: boolean){
-        return {
-            username: this.username,
-            bio: this.bio,
-            image: this.image,
-            following
-        }
-    }
+	toProfileJSON(following: boolean) {
+		return {
+			username: this.username,
+			bio: this.bio,
+			image: this.image,
+			following,
+		};
+	}
 }
