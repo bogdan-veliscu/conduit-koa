@@ -1,6 +1,7 @@
-import { Entity, BeforeUpdate, PrimaryGeneratedColumn, ManyToOne, Index, Column } from 'typeorm';
+import { Entity, BeforeUpdate, PrimaryGeneratedColumn, ManyToOne, Index, Column, OneToMany } from 'typeorm';
 
 import { User } from './User';
+import { Favorite } from './Favorite';
 
 @Entity('articles')
 export class Article {
@@ -22,9 +23,15 @@ export class Article {
 
 	@ManyToOne(
 		() => User,
-		(user: User) => user.articles
+		(user: User) => user.articles,
 	)
-    author!: User;
+	author!: User;
+
+	@OneToMany(
+		() => Favorite,
+		(favorite: Favorite) => favorite.article,
+	)
+	favorites!: Favorite[];
 
 	@Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
 	createdAt!: Date;
@@ -37,11 +44,11 @@ export class Article {
 		this.updatedAt = new Date();
 	}
 
-    toJSON(following: boolean, favorited: boolean) {
-        return {
-            ...this,
-            author: this.author && this.author.toProfileJSON(following),
-            favorited
-        }
-    }
+	toJSON(following: boolean, favorited: boolean) {
+		return {
+			...this,
+			author: this.author && this.author.toProfileJSON(following),
+			favorited,
+		};
+	}
 }

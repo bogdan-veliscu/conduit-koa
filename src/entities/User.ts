@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Index, Column, OneToMany } from 'typeorm';
 import { Article } from './Article';
+import { Favorite } from './Favorite';
 
 @Entity('users')
 export class User {
@@ -28,6 +29,9 @@ export class User {
 		(article: Article) => article.author,
 	)
 	articles!: Article[];
+
+    @OneToMany(()=> Favorite, (favorite: Favorite)=> favorite.user)
+    favorites!: Favorite[];
 
 	toUserJSON(token: string) {
 		return {

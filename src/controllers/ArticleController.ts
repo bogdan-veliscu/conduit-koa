@@ -8,13 +8,17 @@ import { Article } from '../entities/Article';
 import { Connection, SelectQueryBuilder, In } from 'typeorm';
 import { Context } from 'koa';
 import { CREATED, OK, NOT_FOUND, NO_CONTENT } from 'http-status-codes';
+import FavoriteRepository from '../repositories/FavoriteRepository';
+import { Favorite } from '../entities/Favorite';
 
 @route('/api/articles')
 export default class ArticleController {
 	private _articleRepository: ArticleRepository;
+	private _favoriteRepository: FavoriteRepository;
 
 	constructor({ connection }: { connection: Connection }) {
 		this._articleRepository = connection.getCustomRepository(ArticleRepository);
+		this._favoriteRepository = connection.getCustomRepository(FavoriteRepository);
 	}
 
 	@route('/')
@@ -65,7 +69,8 @@ export default class ArticleController {
 		const filterQuery: SelectQueryBuilder<Article> = this._articleRepository
 			.createQueryBuilder('article')
 			.select(['article.id'])
-			.leftJoin('article.author', 'author');
+			.leftJoin('article.author', 'author')
+			.leftJoin('article.favorites', 'favorites');
 
 		filterQuery.where('1 = 1');
 
@@ -84,8 +89,8 @@ export default class ArticleController {
 
 		const query: SelectQueryBuilder<Article> = this._articleRepository
 			.createQueryBuilder('article')
-			.leftJoinAndSelect('article.author', 'author');
-		//TODO add tags and favorites joins
+			.leftJoinAndSelect('article.author', 'author')
+			.leftJoinAndSelect('article.favorites', 'favorites');
 
 		query.where({ id: In(filteredIds.map((article: any) => article.article_id)) });
 
@@ -99,8 +104,10 @@ export default class ArticleController {
 
 		await Promise.all(
 			filteredArticles.map(async (article: Article) => {
-				//TODO compute favorited adn following values
-				articles.push(article.toJSON(false, false));
+				//TODO compute following
+				const favorited: boolean = await this._favoriteRepository.favorited(article, ctx.state.user);
+
+				articles.push(article.toJSON(false, favorited));
 			}),
 		);
 
@@ -141,11 +148,13 @@ export default class ArticleController {
 		await this._articleRepository.update(article.id, article);
 
 		const updatedArticle: Article = await this._articleRepository.findOneOrFail({
-			relations: ['author'],
+			relations: ['author', 'favorites'],
 			where: { slug: article.slug },
 		});
 
-		ctx.body = { article: updatedArticle.toJSON(false, false) };
+		const favorited: boolean = await this._favoriteRepository.favorited(updatedArticle, ctx.state.user);
+
+		ctx.body = { article: updatedArticle.toJSON(false, favorited) };
 		ctx.status = CREATED;
 	}
 
@@ -154,7 +163,7 @@ export default class ArticleController {
 	@before([inject(AuthenticationMiddleware)])
 	async getArticle(ctx: Context) {
 		const article: Article | undefined = await this._articleRepository.findOne({
-			relations: ['author'],
+			relations: ['author', 'favorites'],
 			where: { slug: ctx.params.slug },
 		});
 
@@ -163,7 +172,9 @@ export default class ArticleController {
 			return;
 		}
 
-		ctx.body = { article: article.toJSON(false, false) };
+		const favorited: boolean = await this._favoriteRepository.favorited(article, ctx.state.user);
+
+		ctx.body = { article: article.toJSON(false, favorited) };
 		ctx.status = OK;
 	}
 
@@ -182,5 +193,64 @@ export default class ArticleController {
 
 		await this._articleRepository.delete(article.id);
 		ctx.status = NO_CONTENT;
+	}
+
+	@route('/:slug/favorite')
+	@POST()
+	@before([inject(AuthenticationMiddleware)])
+	async favoriteArticle(ctx: Context) {
+		const article: Article | undefined = await this._articleRepository.findOne({
+			relations: ['author', 'favorites'],
+			where: { slug: ctx.params.slug },
+		});
+		if (!article) {
+			ctx.status = NOT_FOUND;
+			return;
+		}
+
+		const existingFavorite: number = await this._favoriteRepository.count({
+			article,
+			user: ctx.state.user,
+		});
+
+		if (!existingFavorite) {
+			const favorite: Favorite = new Favorite();
+			favorite.article = article;
+			favorite.user = ctx.state.user;
+			await this._favoriteRepository.save(favorite);
+			article.favorites.push(favorite);
+		}
+
+		const following: boolean = false;
+
+		ctx.status = CREATED;
+		ctx.body = { article: article.toJSON(following, true) };
+	}
+
+	@route('/:slug/favorite')
+	@DELETE()
+	@before([inject(AuthenticationMiddleware)])
+	async unfavoriteArticle(ctx: Context) {
+		const article: Article | undefined = await this._articleRepository.findOne({
+			relations: ['author', 'favorites'],
+			where: { slug: ctx.params.slug },
+		});
+
+		if (!article) {
+			ctx.status = NOT_FOUND;
+			return;
+		}
+
+		await this._favoriteRepository.delete({
+			article,
+			user: ctx.state.user,
+		});
+
+		article.favorites.pop();
+
+		const following: boolean = false;
+
+		ctx.status = OK;
+		ctx.body = { article: article.toJSON(following, false) };
 	}
 }
