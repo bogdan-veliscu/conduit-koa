@@ -2,7 +2,7 @@ import { route, POST, before, inject, GET, PUT, DELETE } from 'awilix-koa';
 
 import ArticleRepository from '../repositories/ArticleRepository';
 import AuthenticationMiddleware, { OptionalAuthenticationMiddleware } from '../middleware/AuthenticationMiddleware';
-import { object, assert, string } from '@hapi/joi';
+import { object, assert, string, array } from '@hapi/joi';
 import slugify from 'slugify';
 import { Article } from '../entities/Article';
 import { Connection, SelectQueryBuilder, In } from 'typeorm';
@@ -13,19 +13,20 @@ import { Favorite } from '../entities/Favorite';
 import CommentRepository from '../repositories/CommmentRepository';
 import { Comment } from '../entities/Comment';
 import FollowRepository from '../repositories/FollowRepository';
+import { Tag } from '../entities/Tag';
 
 @route('/api/articles')
 export default class ArticleController {
 	private _articleRepository: ArticleRepository;
 	private _favoriteRepository: FavoriteRepository;
 	private _commentRepository: CommentRepository;
-    private _followRepository: FollowRepository;
+	private _followRepository: FollowRepository;
 
 	constructor({ connection }: { connection: Connection }) {
 		this._articleRepository = connection.getCustomRepository(ArticleRepository);
 		this._favoriteRepository = connection.getCustomRepository(FavoriteRepository);
 		this._commentRepository = connection.getCustomRepository(CommentRepository);
-        this._followRepository = connection.getCustomRepository(FollowRepository);
+		this._followRepository = connection.getCustomRepository(FollowRepository);
 	}
 
 	@route('/')
@@ -46,6 +47,9 @@ export default class ArticleController {
 					body: string()
 						.max(5000)
 						.required(),
+					tagList: array()
+						.items(string().max(10))
+						.required(),
 				}),
 			}),
 		);
@@ -57,11 +61,16 @@ export default class ArticleController {
 		article.body = ctx.request.body.article.body;
 		article.slug = slugify(article.title, { lower: true });
 		article.author = ctx.state.user;
+		article.tagList = ctx.request.body.article.tagList.map((tagLabel: string) => {
+			const tag: Tag = new Tag();
+			tag.label = tagLabel;
+			return tag;
+		});
 
 		await this._articleRepository.save(article);
 
 		const savedArticle: Article = await this._articleRepository.findOneOrFail({
-			relations: ['author'],
+			relations: ['tagList', 'author', 'favorites'],
 			where: { slug: article.slug },
 		});
 
@@ -77,6 +86,7 @@ export default class ArticleController {
 			.createQueryBuilder('article')
 			.select(['article.id'])
 			.leftJoin('article.author', 'author')
+			.leftJoin('article.tagList', 'tagList')
 			.leftJoin('article.favorites', 'favorites');
 
 		filterQuery.where('1 = 1');
@@ -97,6 +107,7 @@ export default class ArticleController {
 		const query: SelectQueryBuilder<Article> = this._articleRepository
 			.createQueryBuilder('article')
 			.leftJoinAndSelect('article.author', 'author')
+			.leftJoinAndSelect('article.tagList', 'tagList')
 			.leftJoinAndSelect('article.favorites', 'favorites');
 
 		query.where({ id: In(filteredIds.map((article: any) => article.article_id)) });
@@ -111,7 +122,7 @@ export default class ArticleController {
 
 		await Promise.all(
 			filteredArticles.map(async (article: Article) => {
-                const following = await this._followRepository.following(ctx.state.user, article.author);
+				const following = await this._followRepository.following(ctx.state.user, article.author);
 				const favorited: boolean = await this._favoriteRepository.favorited(article, ctx.state.user);
 
 				articles.push(article.toJSON(following, favorited));
@@ -155,7 +166,7 @@ export default class ArticleController {
 		await this._articleRepository.update(article.id, article);
 
 		const updatedArticle: Article = await this._articleRepository.findOneOrFail({
-			relations: ['author', 'favorites'],
+			relations: ['tagList', 'author', 'favorites'],
 			where: { slug: article.slug },
 		});
 
@@ -170,7 +181,7 @@ export default class ArticleController {
 	@before([inject(AuthenticationMiddleware)])
 	async getArticle(ctx: Context) {
 		const article: Article | undefined = await this._articleRepository.findOne({
-			relations: ['author', 'favorites'],
+			relations: ['tagList', 'author', 'favorites'],
 			where: { slug: ctx.params.slug },
 		});
 
@@ -232,7 +243,7 @@ export default class ArticleController {
 		comment.author = ctx.state.user;
 		await this._commentRepository.save(comment);
 
-		const following: boolean = false;
+		const following: boolean = await this._followRepository.following(ctx.state.user, article.author);
 
 		ctx.body = { comment: comment.toJSON(following) };
 		ctx.status = CREATED;
@@ -249,12 +260,12 @@ export default class ArticleController {
 		}
 
 		const comments: Comment[] = await this._commentRepository.find({ article });
-		const following: boolean = false;
+		const following: boolean = await this._followRepository.following(ctx.state.user, article.author);
 		ctx.body = { comments: comments.map((comment: Comment) => comment.toJSON(following)) };
 		ctx.status = OK;
 	}
 
-    @route('/:slug/comments/:id')
+	@route('/:slug/comments/:id')
 	@DELETE()
 	@before([inject(AuthenticationMiddleware)])
 	async deleteComment(ctx: Context) {
@@ -275,7 +286,7 @@ export default class ArticleController {
 	@before([inject(AuthenticationMiddleware)])
 	async favoriteArticle(ctx: Context) {
 		const article: Article | undefined = await this._articleRepository.findOne({
-			relations: ['author', 'favorites'],
+			relations: ['tagList', 'author', 'favorites'],
 			where: { slug: ctx.params.slug },
 		});
 		if (!article) {
@@ -296,7 +307,7 @@ export default class ArticleController {
 			article.favorites.push(favorite);
 		}
 
-		const following: boolean = false;
+		const following: boolean = await this._followRepository.following(ctx.state.user, article.author);
 
 		ctx.status = CREATED;
 		ctx.body = { article: article.toJSON(following, true) };
@@ -307,7 +318,7 @@ export default class ArticleController {
 	@before([inject(AuthenticationMiddleware)])
 	async unfavoriteArticle(ctx: Context) {
 		const article: Article | undefined = await this._articleRepository.findOne({
-			relations: ['author', 'favorites'],
+			relations: ['tagList', 'author', 'favorites'],
 			where: { slug: ctx.params.slug },
 		});
 
@@ -323,7 +334,7 @@ export default class ArticleController {
 
 		article.favorites.pop();
 
-		const following: boolean = false;
+		const following: boolean = await this._followRepository.following(ctx.state.user, article.author);
 
 		ctx.status = OK;
 		ctx.body = { article: article.toJSON(following, false) };

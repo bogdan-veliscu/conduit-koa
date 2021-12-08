@@ -1,8 +1,9 @@
-import { Entity, BeforeUpdate, PrimaryGeneratedColumn, ManyToOne, Index, Column, OneToMany } from 'typeorm';
+import { Entity, BeforeUpdate, PrimaryGeneratedColumn, ManyToOne, Index, Column, OneToMany, ManyToMany, JoinTable } from 'typeorm';
 
 import { User } from './User';
 import { Favorite } from './Favorite';
 import { Comment } from './Comment';
+import { Tag } from './Tag';
 
 @Entity('articles')
 export class Article {
@@ -21,6 +22,14 @@ export class Article {
 
 	@Column({ default: '' })
 	body!: string;
+
+	@ManyToMany(
+		() => Tag,
+		(tag: Tag) => tag.articles,
+		{ cascade: true },
+	)
+    @JoinTable()
+	tagList!: Tag[];
 
 	@ManyToOne(
 		() => User,
