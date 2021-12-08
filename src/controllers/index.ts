@@ -1,5 +1,5 @@
 import { SwaggerRouter } from "koa-swagger-decorator";
-import UserController from './usersController';
+import UserController from './UserController';
 
 
 export default function Controller(router: SwaggerRouter): void{

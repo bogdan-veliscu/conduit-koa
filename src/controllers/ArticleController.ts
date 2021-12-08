@@ -12,17 +12,20 @@ import FavoriteRepository from '../repositories/FavoriteRepository';
 import { Favorite } from '../entities/Favorite';
 import CommentRepository from '../repositories/CommmentRepository';
 import { Comment } from '../entities/Comment';
+import FollowRepository from '../repositories/FollowRepository';
 
 @route('/api/articles')
 export default class ArticleController {
 	private _articleRepository: ArticleRepository;
 	private _favoriteRepository: FavoriteRepository;
 	private _commentRepository: CommentRepository;
+    private _followRepository: FollowRepository;
 
 	constructor({ connection }: { connection: Connection }) {
 		this._articleRepository = connection.getCustomRepository(ArticleRepository);
 		this._favoriteRepository = connection.getCustomRepository(FavoriteRepository);
 		this._commentRepository = connection.getCustomRepository(CommentRepository);
+        this._followRepository = connection.getCustomRepository(FollowRepository);
 	}
 
 	@route('/')
@@ -108,10 +111,10 @@ export default class ArticleController {
 
 		await Promise.all(
 			filteredArticles.map(async (article: Article) => {
-				//TODO compute following
+                const following = await this._followRepository.following(ctx.state.user, article.author);
 				const favorited: boolean = await this._favoriteRepository.favorited(article, ctx.state.user);
 
-				articles.push(article.toJSON(false, favorited));
+				articles.push(article.toJSON(following, favorited));
 			}),
 		);
 

@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Index, Column, OneToMany } from 'typeor
 import { Article } from './Article';
 import { Favorite } from './Favorite';
 import { Comment } from './Comment';
+import { Follow } from './Follow';
 
 @Entity('users')
 export class User {
@@ -42,6 +43,18 @@ export class User {
 		(favorite: Favorite) => favorite.user,
 	)
 	favorites!: Favorite[];
+
+	@OneToMany(
+		() => Follow,
+		(follow: Follow) => follow.follower,
+	)
+	followers!: Follow[];
+
+	@OneToMany(
+		() => Follow,
+		(follow: Follow) => follow.following,
+	)
+	following!: Follow[];
 
 	toUserJSON(token: string) {
 		return {
