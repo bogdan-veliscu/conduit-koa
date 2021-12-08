@@ -2,6 +2,7 @@ import { Entity, BeforeUpdate, PrimaryGeneratedColumn, ManyToOne, Index, Column,
 
 import { User } from './User';
 import { Favorite } from './Favorite';
+import { Comment } from './Comment';
 
 @Entity('articles')
 export class Article {
@@ -32,6 +33,12 @@ export class Article {
 		(favorite: Favorite) => favorite.article,
 	)
 	favorites!: Favorite[];
+
+	@OneToMany(
+		() => Comment,
+		(comment: Comment) => comment.article,
+	)
+	comments!: Comment[];
 
 	@Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
 	createdAt!: Date;

@@ -10,15 +10,19 @@ import { Context } from 'koa';
 import { CREATED, OK, NOT_FOUND, NO_CONTENT } from 'http-status-codes';
 import FavoriteRepository from '../repositories/FavoriteRepository';
 import { Favorite } from '../entities/Favorite';
+import CommentRepository from '../repositories/CommmentRepository';
+import { Comment } from '../entities/Comment';
 
 @route('/api/articles')
 export default class ArticleController {
 	private _articleRepository: ArticleRepository;
 	private _favoriteRepository: FavoriteRepository;
+	private _commentRepository: CommentRepository;
 
 	constructor({ connection }: { connection: Connection }) {
 		this._articleRepository = connection.getCustomRepository(ArticleRepository);
 		this._favoriteRepository = connection.getCustomRepository(FavoriteRepository);
+		this._commentRepository = connection.getCustomRepository(CommentRepository);
 	}
 
 	@route('/')
@@ -192,6 +196,74 @@ export default class ArticleController {
 		}
 
 		await this._articleRepository.delete(article.id);
+		ctx.status = NO_CONTENT;
+	}
+
+	@route('/:slug/comments')
+	@POST()
+	@before([inject(AuthenticationMiddleware)])
+	async addCommment(ctx: Context) {
+		assert(
+			ctx.request.body,
+			object({
+				comment: object({
+					body: string()
+						.max(5000)
+						.required(),
+				}),
+			}),
+		);
+
+		const article: Article | undefined = await this._articleRepository.findOne({
+			slug: ctx.params.slug,
+		});
+
+		if (!article) {
+			ctx.status = NOT_FOUND;
+			return;
+		}
+
+		const comment: Comment = new Comment();
+		comment.body = ctx.request.body.comment.body;
+		comment.article = article;
+		comment.author = ctx.state.user;
+		await this._commentRepository.save(comment);
+
+		const following: boolean = false;
+
+		ctx.body = { comment: comment.toJSON(following) };
+		ctx.status = CREATED;
+	}
+
+	@route('/:slug/comments')
+	@GET()
+	@before([inject(OptionalAuthenticationMiddleware)])
+	async getComments(ctx: Context) {
+		const article: Article | undefined = await this._articleRepository.findOne({ slug: ctx.params.slug });
+		if (!article) {
+			ctx.status = NOT_FOUND;
+			return;
+		}
+
+		const comments: Comment[] = await this._commentRepository.find({ article });
+		const following: boolean = false;
+		ctx.body = { comments: comments.map((comment: Comment) => comment.toJSON(following)) };
+		ctx.status = OK;
+	}
+
+    @route('/:slug/comments/:id')
+	@DELETE()
+	@before([inject(AuthenticationMiddleware)])
+	async deleteComment(ctx: Context) {
+		const article: Article | undefined = await this._articleRepository.findOne({
+			slug: ctx.params.slug,
+		});
+		if (!article) {
+			ctx.status = NOT_FOUND;
+			return;
+		}
+
+		await this._commentRepository.delete(ctx.params.id);
 		ctx.status = NO_CONTENT;
 	}
 
